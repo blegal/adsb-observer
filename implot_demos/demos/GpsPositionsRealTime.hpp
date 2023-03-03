@@ -14,6 +14,7 @@
 #include <iostream>
 #include <iterator>
 #include <locale>
+#include <exception>
 
 //
 //
@@ -124,7 +125,7 @@ public:
         //
         int nLines = 0;
         std::ifstream ifile( filename );
-        std::string line, lat, lon, pidx;
+        std::string line, lat, lon, pidx, crc, oaci, type;
         while (std::getline(ifile, line))
         {
             std::istringstream iss(line);   // string stream
@@ -136,19 +137,40 @@ public:
             if(lat.size() == 0)              // un espace debute la ligne !
                 std::getline(iss, lat, ' '); //
 
-            std::getline(iss, lon,  ' ');    //
-            std::getline(iss, pidx, ' ');    //
+            std::getline(iss, lon,  ' ');    // longitude
+            std::getline(iss, crc,  ' ');    // crc
+            std::getline(iss, oaci, ' ');    // oaci
+            std::getline(iss, type, ' ');    // type
+            std::getline(iss, pidx, ' ');    // plane id
 
+            try
+            {
+                const float f_lon  = conv_lon_to_x( std::stof(lon) );    // on convertit la lattitude et la longitude
+                const float f_lat  = conv_lat_to_y( std::stof(lat) );    // dans des coordonnées compatible 2D
+                const int   i_crc  =                std::stoi(lat)  ;    // dans des coordonnées compatible 2D
+                const int   i_oaci =                std::stoi(lat)  ;    // dans des coordonnées compatible 2D
+                const int   i_type =                std::stoi(lat)  ;    // dans des coordonnées compatible 2D
+                const int   p_id   =                std::stoi(pidx) ;
 
-            const float f_lon = conv_lon_to_x( std::stof(lon) );    // on convertit la lattitude et la longitude
-            const float f_lat = conv_lat_to_y( std::stof(lat) );    // dans des coordonnées compatible 2D
-            const int p_id    =                std::stoi(pidx) ;
+                if( i_crc )
+                {
 
-            pos_x.push_back( f_lon );   // On ajoute les données dans la liste
-            pos_y.push_back( f_lat );   // On ajoute les données dans la liste
-            idx.push_back  ( p_id  );   // On ajoute les données dans la liste
+                    pos_x.push_back   ( f_lon  );   // On ajoute les données dans la liste
+                    pos_y.push_back   ( f_lat  );   // On ajoute les données dans la liste
+                    pos_crc.push_back ( i_crc  );   // On ajoute les données dans la liste
+                    pos_oaci.push_back( i_oaci );   // On ajoute les données dans la liste
+                    pos_type.push_back( i_type );   // On ajoute les données dans la liste
+                    idx.push_back     ( p_id   );   // On ajoute les données dans la liste
+                }
 
-            nLines += 1;
+                nLines += 1;
+            }
+            catch(std::exception &err)
+            {
+                std::cout <<  "(EE) An errors happened diring the file parsing..." << std::endl;
+                std::cout <<  "(EE) line " << nLines << " was (" << line << ")"    << std::endl;
+                break;
+            }
         }
 
         utcExample();
@@ -167,6 +189,9 @@ public:
 
     std::vector<float> pos_x;
     std::vector<float> pos_y;
+    std::vector<  int> pos_crc;
+    std::vector<  int> pos_oaci;
+    std::vector<float> pos_type;
     std::vector<  int> idx;
 };
 
