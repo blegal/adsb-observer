@@ -41,6 +41,46 @@ namespace fs = std::filesystem;
 #define USER_AGENT    "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0; Trident/4.0)"                        // change this to represent your own app if you extend this code
 #define PI 3.14159265359
 
+#if 0
+ImVec4 PlaneColor(int type)
+{
+    switch (value) {
+        case  0 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case  1 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case  2 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case  3 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case  5 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case  6 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case  7 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case 10 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case 20 : return IM_COL32(  0,   0,   0, 255); // BLACK
+        case 21 : return IM_COL32(  0, 255,   0, 255); // GREEN SurfaceEmergencyVehicle;
+        case 23 : return IM_COL32(  0, 255,   0, 255); // GREEN SurfaceServiceVehicle;
+        case 24 : return IM_COL32(  0, 255,   0, 255); // GREEN
+        case 25 : return IM_COL32(  0, 255,   0, 255); // GREEN
+        case 26 : return IM_COL32(  0, 255,   0, 255); // GREEN
+        case 27 : return IM_COL32(  0, 255,   0, 255); // GREEN
+        case 30 : return IM_COL32(255,   0,   0, 255); // NoInformation;
+        case 31 : return IM_COL32(255,   0,   0, 255); // Sailplane;
+        case 32 : return IM_COL32(255,   0,   0, 255); // LighterThanAir;
+        case 33 : return IM_COL32(255,   0,   0, 255); // Parachutist;
+        case 34 : return IM_COL32(255,   0,   0, 255); // UltralightAircraft;
+        case 35 : return IM_COL32(255,   0,   0, 255); // Reserved;
+        case 36 : return IM_COL32(255,   0,   0, 255); // UnmannedVehicle;
+        case 37 : return IM_COL32(255,   0,   0, 255); // SpaceVehicle;
+        case 40 : return IM_COL32(255,   0,   0, 255); // NoInformation;
+        case 41 : return IM_COL32(128, 128, 255, 255); // BLUE
+        case 42 : return IM_COL32( 64,  64, 255, 255); // BLUE
+        case 43 : return IM_COL32( 32,  32, 255, 255); // BLUE
+        case 44 : return IM_COL32(  0,   0, 255, 255); // BLUE
+        case 45 : return IM_COL32(  0,   0, 255, 255); // BLUE
+        case 46 : return IM_COL32(  0,   0, 255, 255); // BLUE
+        case 47 : return IM_COL32(255, 255, 0, 255); // Rotorcraft;
+        default : return IM_COL32(255,   0,   0, 255);
+    }
+}
+#endif
+
 //
 //
 //
@@ -446,6 +486,13 @@ struct ImMaps : public App {
     using App::App;
 
     void Update() override {
+
+        if( soucoupe == nullptr )
+        {
+            soucoupe = new Image();
+            soucoupe->LoadFromFile("soucoupe.png");
+        }
+
         static int renders = 0;
         if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A)))
             debug = !debug;
@@ -526,13 +573,22 @@ struct ImMaps : public App {
                         ImPlot::SetNextMarkerStyle(ImPlotMarker_Plus);
                     }
                 }
-
+                int    size  = length - start;
                 float* ptr_x = gps.pos_x.data() + start;
                 float* ptr_y = gps.pos_y.data() + start;
-                int    size  = length - start;
                 ImPlot::PlotLine("", ptr_x, ptr_y, size);
                 ImPlot::PushStyleColor(ImPlotCol_Line, black);
-                ImPlot::PlotText("X", gps.pos_x[size-1], gps.pos_y[size-1]);
+                ImPlot::PlotText("X", gps.pos_x[length-1], gps.pos_y[length-1]);
+
+//              ImPlotPoint bounds_min;
+//                bounds_min.x = gps.pos_x[length-1] - 0.01;
+//                bounds_min.y = gps.pos_y[length-1] - 0.01;
+
+//                ImPlotPoint bounds_max;
+//                bounds_max.x = gps.pos_x[length-1] + 0.01;
+//                bounds_max.y = gps.pos_y[length-1] + 0.01;
+
+//                ImPlot::PlotImage("##Tiles",(void*)(intptr_t)soucoupe, bounds_min, bounds_max, {0,0},{1,1}, ImVec4(1,1,1,1));
 
 #else
                 const int length = gps.pos_x.size();
@@ -586,6 +642,8 @@ struct ImMaps : public App {
         }
         ImGui::End();
     }
+
+    Image* soucoupe = nullptr;
 
     TileManager          mngr;
 #if 0
