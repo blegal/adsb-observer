@@ -81,6 +81,39 @@ ImVec4 PlaneColor(int type)
 }
 #endif
 
+long double toRadians(const long double degree) {
+    long double one_deg = (M_PI) / 180;
+    return (one_deg * degree);
+}
+
+inline long double distance(long double lat1, long double long1,
+                     long double lat2, long double long2) {
+    lat1  = toRadians(lat1);
+    long1 = toRadians(long1);
+    lat2  = toRadians(lat2);
+    long2 = toRadians(long2);
+
+    // Haversine Formula
+    long double dlong = long2 - long1;
+    long double dlat = lat2 - lat1;
+
+    long double ans = pow(sin(dlat / 2), 2) +
+            cos(lat1) * cos(lat2) *
+            pow(sin(dlong / 2), 2);
+
+    ans = 2 * asin(sqrt(ans));
+
+    // Radius of Earth in
+    // Kilometers, R = 6371
+    // Use R = 3956 for miles
+    long double R = 6371;
+
+    // Calculate the result
+    ans = ans * R;
+
+    return ans;
+}
+
 //
 //
 //
@@ -153,6 +186,7 @@ double tiley2lat(int y, int z) {
 #include "GpsPositions.hpp"
 #include "GpsPositionsRefresh.hpp"
 #include "GpsPositionsRealTime.hpp"
+#include "DistanceCircles.hpp"
 
 //
 //
@@ -480,7 +514,9 @@ private:
 //
 //
 //
-static bool debug = false;
+static bool debug             = false;
+
+static bool only_reliable_gps = false;
 
 struct ImMaps : public App {
     using App::App;
@@ -493,9 +529,18 @@ struct ImMaps : public App {
             soucoupe->LoadFromFile("soucoupe.png");
         }
 
+        //
+        // This code highlights the tile prefetching process for debugging purpose
+        //
         static int renders = 0;
         if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A)))
             debug = !debug;
+
+        //
+        // this option enables to remove CRC brute forced points
+        //
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_B)))
+            only_reliable_gps = !only_reliable_gps;
 
         ImGui::SetNextWindowPos({0,0});
         ImGui::SetNextWindowSize(GetWindowSize());
@@ -543,25 +588,40 @@ struct ImMaps : public App {
                 renders++;
             }
 
+
+
             {
                 ImPlot::PushStyleColor(ImPlotCol_InlayText, IM_COL32(255, 0, 0, 255));
 
-                gps.update();
+                gps.update( only_reliable_gps );
 
 #if 1
+                //
+                // On indique que nous souhaitons afficher des lignes noir pour
+                // représenter les trajectoires des avions ainsi que des marqueurs
+                // de type crois (+)
+                //
                 ImVec4 black = ImVec4( 0, 0, 0, 1);
-                ImPlot::PushStyleColor(ImPlotCol_Line, black);
+                ImPlot::PushStyleColor    (ImPlotCol_Line, black);
                 ImPlot::SetNextMarkerStyle(ImPlotMarker_Plus);
+
+                //
+                // On parcours l'ensemble des coordonnées à notre disposition
+                //
                       int start  = 0;
                 const int length = gps.pos_x.size();
                 for(int l = 1; l < length; l += 1)
                 {
                     if( gps.idx[l] == gps.idx[start] )
                     {
-                        // rien à faire ...
+                        // l'avions est toujours le même donc on a rien à faire ...
                     }
                     else
                     {
+                        //
+                        // On passe à l'avion suivant donc on doit lancer le tracé
+                        // de la séquence de points
+                        //
                         float* ptr_x = gps.pos_x.data() + start;
                         float* ptr_y = gps.pos_y.data() + start;
                         int    size  = l - start;
@@ -573,6 +633,9 @@ struct ImMaps : public App {
                         ImPlot::SetNextMarkerStyle(ImPlotMarker_Plus);
                     }
                 }
+                //
+                // On affiche le dernier avion qui se trouvait en fin de liste
+                //
                 int    size  = length - start;
                 float* ptr_x = gps.pos_x.data() + start;
                 float* ptr_y = gps.pos_y.data() + start;
@@ -608,29 +671,95 @@ struct ImMaps : public App {
                 }
 #endif
 #if 1
-                // ImPlot::PlotText("X", 0.5, 0.5);
-
-                // l'ENSEIRB
+                //
+                // Affichage de la position de l'ENSEIRB
+                //
 
                 double lon = -0.605208;
                 double lat = 44.805643;
-
-                double pX = conv_lon_to_x( lon );
-                double pY = conv_lat_to_y( lat );
+                double pX  = conv_lon_to_x( lon );
+                double pY  = conv_lat_to_y( lat );
                 ImPlot::PlotText("O", pX, pY);
 
-                // le musée de GreenWich
 
+                dist.update();
+
+#if 0                //
+                //
+                // grille horizontale de 100 km
+                //
+                double h_pos = 0;
+                for(int i = 0; i < 100; i++)
+                {
+                    if( distance(lat, lon, lat, lon + h_pos) >= 100 )
+                        break;
+                    h_pos += 0.1f;
+                }
+//                std::cout << distance(lat, lon, lat, lon + h_pos) << std::endl;
+                //
+                //
+//                static double h_vals[5] = { conv_lon_to_x(lon - h_pos), conv_lon_to_x(lon - h_pos/2), conv_lon_to_x(lon), conv_lon_to_x(lon + h_pos/2), conv_lon_to_x(lon + h_pos) };
+//                ImPlot::PlotInfLines("", h_vals, 5);
+                //
+                //
+                // grille verticale de 100 km
+                //
+                double v_pos = 0;
+                for(int i = 0; i < 100; i++)
+                {
+                    if( distance(lat, lon, lat + v_pos, lon) >= 100 )
+                        break;
+                    v_pos += 0.1f;
+                }
+//                std::cout << distance(lat, lon, lat + v_pos, lon) << std::endl;
+                //
+                //
+//                static double v_vals[5] = { conv_lat_to_y(lat - v_pos), conv_lat_to_y(lat - v_pos/2), conv_lat_to_y(lat), conv_lat_to_y(lat + v_pos/2), conv_lat_to_y(lat + v_pos) };
+//                ImPlot::PlotInfLines("", v_vals, 5, ImPlotInfLinesFlags_Horizontal);
+#endif
+                //
+                //
+                // Affichage de la position du musée de GreenWich
+                //
                 lon = 0.0;
                 lat = 51.476852;
                 pX  = conv_lon_to_x( lon );
                 pY  = conv_lat_to_y( lat );
                 ImPlot::PlotText("X", pX, pY);
+
+#if 0
+                lon = -0.605208;
+                lat = 44.805643;
+                static const int k_points_per = 50;
+                static double x_data_050[k_points_per];
+                static double y_data_050[k_points_per];
+                static double x_data_100[k_points_per];
+                static double y_data_100[k_points_per];
+                static double x_data_200[k_points_per];
+                static double y_data_200[k_points_per];
+                for (int p = 0; p < k_points_per; p+=1)
+                {
+                    x_data_050[p] = conv_lon_to_x( lon + 0.5 * h_pos * cos((double)p/(k_points_per-1) * 6.28) );
+                    y_data_050[p] = conv_lat_to_y( lat + 0.5 * v_pos * sin((double)p/(k_points_per-1) * 6.28) );
+
+                    x_data_100[p] = conv_lon_to_x( lon +       h_pos * cos((double)p/(k_points_per-1) * 6.28) );
+                    y_data_100[p] = conv_lat_to_y( lat +       v_pos * sin((double)p/(k_points_per-1) * 6.28) );
+
+                    x_data_200[p] = conv_lon_to_x( lon + 2.0 * h_pos * cos((double)p/(k_points_per-1) * 6.28) );
+                    y_data_200[p] = conv_lat_to_y( lat + 2.0 * v_pos * sin((double)p/(k_points_per-1) * 6.28) );
+
+                }
+                ImPlot::PlotLine("", x_data_050, y_data_050, k_points_per);
+                ImPlot::PlotLine("", x_data_100, y_data_100, k_points_per);
+                ImPlot::PlotLine("", x_data_200, y_data_200, k_points_per);
+
+#endif
 #endif
             }
 
-
+            //
             // On rajoute le petit logo à la fin de la fenetre
+            //
 
             ImPlot::PushPlotClipRect();
             static const char* label = ICON_FA_COPYRIGHT " OpenStreetMap Contributors";
@@ -650,6 +779,7 @@ struct ImMaps : public App {
     GpsPositionsRefresh  gps;
 #else
     GpsPositionsRealTime gps;
+    DistanceCircles dist;
 #endif
 };
 

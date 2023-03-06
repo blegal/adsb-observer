@@ -70,7 +70,7 @@ public:
 
     }
     
-    void update()
+    void update(const bool fiable_only)
     {
 
 #ifdef __APPLE__
@@ -116,6 +116,10 @@ public:
         pos_x.clear();
         pos_y.clear();
         idx.clear();
+        pos_crc.clear();
+        pos_oaci.clear();
+        pos_type.clear();
+
 
 //      std::cout << "(DD) The file was updated (" <<  filename << ")" << std::endl;
 
@@ -124,6 +128,7 @@ public:
         // un couple de valeur par ligne formaté en "%f %f"
         //
         int nLines = 0;
+        int nInfos = 0;
         std::ifstream ifile( filename );
         std::string line, lat, lon, pidx, crc, oaci, type;
         while (std::getline(ifile, line))
@@ -147,12 +152,12 @@ public:
             {
                 const float f_lon  = conv_lon_to_x( std::stof(lon) );    // on convertit la lattitude et la longitude
                 const float f_lat  = conv_lat_to_y( std::stof(lat) );    // dans des coordonnées compatible 2D
-                const int   i_crc  =                std::stoi(lat)  ;    // dans des coordonnées compatible 2D
-                const int   i_oaci =                std::stoi(lat)  ;    // dans des coordonnées compatible 2D
-                const int   i_type =                std::stoi(lat)  ;    // dans des coordonnées compatible 2D
+                const int   i_crc  =                std::stoi(crc)  ;    // dans des coordonnées compatible 2D
+                const int   i_oaci =                std::stoi(oaci) ;    // dans des coordonnées compatible 2D
+                const int   i_type =                std::stoi(type) ;    // dans des coordonnées compatible 2D
                 const int   p_id   =                std::stoi(pidx) ;
 
-                if( i_crc )
+                if( (fiable_only == false) || (i_crc == 1) )
                 {
 
                     pos_x.push_back   ( f_lon  );   // On ajoute les données dans la liste
@@ -161,8 +166,8 @@ public:
                     pos_oaci.push_back( i_oaci );   // On ajoute les données dans la liste
                     pos_type.push_back( i_type );   // On ajoute les données dans la liste
                     idx.push_back     ( p_id   );   // On ajoute les données dans la liste
+                    nInfos += 1;
                 }
-
                 nLines += 1;
             }
             catch(std::exception &err)
@@ -174,7 +179,7 @@ public:
         }
 
         utcExample();
-        std::cout <<  "Data were loaded (" <<  nLines << ") coordonates" << std::endl;
+        std::cout <<  "Data were loaded (" <<  nLines << ") for (" << nInfos << ") coordonates" << std::endl;
 
         ifile.close();
         ftime = curTime;
@@ -185,14 +190,17 @@ public:
         pos_x.clear();
         pos_y.clear();
         idx.clear();
+        pos_crc.clear();
+        pos_oaci.clear();
+        pos_type.clear();
     }
 
     std::vector<float> pos_x;
     std::vector<float> pos_y;
+    std::vector<  int> idx;
     std::vector<  int> pos_crc;
     std::vector<  int> pos_oaci;
     std::vector<float> pos_type;
-    std::vector<  int> idx;
 };
 
 
