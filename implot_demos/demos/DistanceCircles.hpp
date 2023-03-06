@@ -82,7 +82,7 @@ public:
 
 
         double h_pos = 0;
-        for(int i = 0; i < 100; i++)
+        for(int i = 0; i < 100; i += 1)
         {
             if( distance(lat, lon, lat, lon + h_pos) >= 100 )
                 break;
@@ -90,14 +90,14 @@ public:
         }
 
         double v_pos = 0;
-        for(int i = 0; i < 100; i++)
+        for(int i = 0; i < 100; i += 1)
         {
             if( distance(lat, lon, lat + v_pos, lon) >= 100 )
                 break;
             v_pos += 0.05f;
         }
 
-        for (int p = 0; p < k_points_per; p+=1)
+        for (int p = 0; p < k_points_per; p += 1)
         {
             //
             // 50 km
@@ -127,7 +127,6 @@ public:
         ImPlot::PlotLine("", x_data_050, y_data_050, k_points_per);
         ImPlot::PlotLine("", x_data_100, y_data_100, k_points_per);
         ImPlot::PlotLine("", x_data_200, y_data_200, k_points_per);
-
     }
     
 
@@ -141,7 +140,6 @@ public:
 
         delete[] x_data_200;
         delete[] y_data_200;
-
     }
 
 };
