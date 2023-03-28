@@ -62,12 +62,13 @@ class GpsPositionsRealTime
 {
 private:
     std::filesystem::file_time_type ftime;
+    bool last_fiable_only;
 
 public:
 
     GpsPositionsRealTime()
     {
-
+        last_fiable_only = false;
     }
     
     void update(const bool fiable_only)
@@ -110,7 +111,10 @@ public:
         auto curTime = std::filesystem::last_write_time( filename );
         if( curTime == ftime )
         {
-            return;
+
+            if( last_fiable_only == fiable_only )
+                return;
+            last_fiable_only = fiable_only;
         }
 
         pos_x.clear();
@@ -148,14 +152,22 @@ public:
             std::getline(iss, type, ' ');    // type
             std::getline(iss, pidx, ' ');    // plane id
 
+
+            float f_lon  = 0;
+            float f_lat  = 0;
+            int   i_crc  = 0;
+            int   i_oaci = 0;
+            int   i_type = 0;
+            int   p_id   = 0;
+
             try
             {
-                const float f_lon  = conv_lon_to_x( std::stof(lon) );    // on convertit la lattitude et la longitude
-                const float f_lat  = conv_lat_to_y( std::stof(lat) );    // dans des coordonnées compatible 2D
-                const int   i_crc  =                std::stoi(crc)  ;    // dans des coordonnées compatible 2D
-                const int   i_oaci =                std::stoi(oaci) ;    // dans des coordonnées compatible 2D
-                const int   i_type =                std::stoi(type) ;    // dans des coordonnées compatible 2D
-                const int   p_id   =                std::stoi(pidx) ;
+                f_lon  = conv_lon_to_x( std::stof(lon) );    // on convertit la lattitude et la longitude
+                f_lat  = conv_lat_to_y( std::stof(lat) );    // dans des coordonnées compatible 2D
+                i_crc  =                std::stoi(crc)  ;    // dans des coordonnées compatible 2D
+                //i_oaci =                std::stoi(oaci) ;    // dans des coordonnées compatible 2D
+                i_type =                std::stoi(type) ;    // dans des coordonnées compatible 2D
+                p_id   =                std::stoi(pidx) ;
 
                 if( (fiable_only == false) || (i_crc == 1) )
                 {

@@ -187,6 +187,7 @@ double tiley2lat(int y, int z) {
 #include "GpsPositionsRefresh.hpp"
 #include "GpsPositionsRealTime.hpp"
 #include "DistanceCircles.hpp"
+#include "DistanceCirclesV2.hpp"
 
 //
 //
@@ -779,7 +780,7 @@ struct ImMaps : public App {
     GpsPositionsRefresh  gps;
 #else
     GpsPositionsRealTime gps;
-    DistanceCircles dist;
+    DistanceCirclesV2 dist;
 #endif
 };
 
