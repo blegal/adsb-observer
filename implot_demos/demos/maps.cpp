@@ -537,9 +537,15 @@ struct ImMaps : public App {
         if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_A)))
             debug = !debug;
 
-        //
-        // this option enables to remove CRC brute forced points
-        //
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_P)))
+            dist.regenerate( 50.0 );
+
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_M)))
+            dist.regenerate( 0.50 );
+
+        if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_L)))
+            dist.regenerate( 0.25 );
+
         if (ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_B)))
             only_reliable_gps = !only_reliable_gps;
 
@@ -779,8 +785,8 @@ struct ImMaps : public App {
 #if 0
     GpsPositionsRefresh  gps;
 #else
-    GpsPositionsRealTime gps;
-    DistanceCirclesV2 dist;
+    GpsPositionsRealTime  gps;
+    DistanceCirclesV2    dist;
 #endif
 };
 
@@ -796,6 +802,6 @@ struct ImMaps : public App {
 
 int main(int argc, char const *argv[])
 {
-    ImMaps app("ImMaps",960,540,argc,argv);
+    ImMaps app("ImMaps", 960, 540, argc, argv);
     app.Run();
 }
